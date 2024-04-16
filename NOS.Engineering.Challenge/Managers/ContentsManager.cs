@@ -36,4 +36,64 @@ public class ContentsManager : IContentsManager
     {
         return _database.Delete(id);
     }
+
+    public async Task<Content?> AddGenresToContent(Guid id, IEnumerable<string> genres)
+    {
+        var content = await _database.Read(id).ConfigureAwait(false);
+
+        if (content == null)
+            return null;
+
+        // Adiciona apenas os gêneros que não estão presentes no conteúdo
+        foreach (var genre in genres)
+        {
+            if (!content.GenreList.Contains(genre))
+            {
+                content.GenreList.Append(genre);
+            }
+        }
+
+        var contentDto = ConvertToContentDto(content);
+
+        return await _database.Update(id, contentDto).ConfigureAwait(false);
+    }
+
+    private ContentDto ConvertToContentDto(Content content)
+    {
+        return new ContentDto(
+            content.Title,
+            content.SubTitle,
+            content.Description,
+            content.ImageUrl,
+            content.Duration,
+            content.StartTime,
+            content.EndTime,
+            content.GenreList
+        );
+    }
+
+    public async Task<Content?> RemoveGenresFromContent(Guid id, IEnumerable<string> genres)
+    {
+        var content = await _database.Read(id).ConfigureAwait(false);
+
+        if (content == null)
+            return null;
+
+        // Remove os gêneros especificados do conteúdo
+        var updatedGenres = content.GenreList.Except(genres).ToList();
+
+        // Cria uma cópia do conteúdo com os gêneros removidos
+        var updatedContent = new ContentDto(
+            content.Title,
+            content.SubTitle,
+            content.Description,
+            content.ImageUrl,
+            content.Duration,
+            content.StartTime,
+            content.EndTime,
+            updatedGenres
+        );
+
+        return await _database.Update(id, updatedContent).ConfigureAwait(false);
+    }
 }

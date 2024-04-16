@@ -20,16 +20,31 @@ public class ContentMapper : IMapper<Content, ContentDto>
 
     public Content Patch(Content oldItem, ContentDto newItem)
     {
-        return new Content(
-                oldItem.Id,
-                newItem.Title ?? oldItem.Title,
-                newItem.SubTitle ?? oldItem.SubTitle,
-                newItem.Description ?? oldItem.Description,
-                newItem.ImageUrl ?? oldItem.ImageUrl,
-                newItem.Duration ?? oldItem.Duration,
-                newItem.StartTime ?? oldItem.StartTime,
-                newItem.EndTime ?? oldItem.EndTime,
-                !newItem.GenreList.Any() ? oldItem.GenreList : newItem.GenreList);
+        // Cria uma nova lista para os gêneros atualizados
+        List<string> updatedGenres = oldItem.GenreList.ToList();
+
+        // Adiciona novos gêneros ao conteúdo atualizado
+        foreach (var genre in newItem.GenreList)
+        {
+            if (!updatedGenres.Contains(genre))
+            {
+                updatedGenres.Add(genre);
+            }
+        }
+
+        // Cria um novo objeto Content com os dados atualizados
+        Content updatedItem = new Content(
+            oldItem.Id,
+            newItem.Title ?? oldItem.Title,
+            newItem.SubTitle ?? oldItem.SubTitle,
+            newItem.Description ?? oldItem.Description,
+            newItem.ImageUrl ?? oldItem.ImageUrl,
+            newItem.Duration ?? oldItem.Duration,
+            newItem.StartTime ?? oldItem.StartTime,
+            newItem.EndTime ?? oldItem.EndTime,
+            updatedGenres // Usa a lista de gêneros atualizada
+        );
+
+        return updatedItem;
     }
-    
 }
