@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NOS.Engineering.Challenge.Database;
 using NOS.Engineering.Challenge.Models;
@@ -8,17 +9,25 @@ public class ContentsManager : IContentsManager
 {
     private readonly IDatabase<Content?, ContentDto> _database;
     private readonly ILogger<ContentsManager> _logger;
+    private readonly IMemoryCache _cache;
 
-    public ContentsManager(IDatabase<Content?, ContentDto> database, ILogger<ContentsManager> logger)
+    public ContentsManager(IDatabase<Content?, ContentDto> database, ILogger<ContentsManager> logger, IMemoryCache cache)
     {
         _database = database;
         _logger = logger;
+        _cache = cache;
     }
 
-    public Task<IEnumerable<Content?>> GetManyContents()
+    public async Task<IEnumerable<Content?>> GetManyContents()
     {
-        _logger.LogInformation("Getting many contents.");
-        return _database.ReadAll();
+        const string cacheKey = "AllContents";
+        if (!_cache.TryGetValue(cacheKey, out IEnumerable<Content?> contents))
+        {
+            _logger.LogInformation("Getting many contents.");
+            contents = await _database.ReadAll().ConfigureAwait(false);
+            _cache.Set(cacheKey, contents, TimeSpan.FromMinutes(5));
+        }
+        return contents;
     }
 
     public Task<Content?> CreateContent(ContentDto content)
@@ -27,10 +36,23 @@ public class ContentsManager : IContentsManager
         return _database.Create(content);
     }
 
-    public Task<Content?> GetContent(Guid id)
+    public async Task<Content?> GetContent(Guid id)
     {
         _logger.LogInformation("Getting content with id {Id}.", id);
-        return _database.Read(id);
+
+        if (_cache.TryGetValue(id, out Content? cachedContent))
+        {
+            return cachedContent;
+        }
+
+        var content = await _database.Read(id).ConfigureAwait(false);
+
+        if (content != null)
+        {
+            _cache.Set(id, content, TimeSpan.FromMinutes(5));
+        }
+
+        return content;
     }
 
     public Task<Content?> UpdateContent(Guid id, ContentDto content)
@@ -48,6 +70,12 @@ public class ContentsManager : IContentsManager
     public async Task<Content?> AddGenresToContent(Guid id, IEnumerable<string> genres)
     {
         _logger.LogInformation("Adding genres to content with id {Id}.", id);
+
+        if (_cache.TryGetValue(id, out Content? cachedContent))
+        {
+            return cachedContent;
+        }
+
         var content = await _database.Read(id).ConfigureAwait(false);
 
         if (content == null)
@@ -66,13 +94,22 @@ public class ContentsManager : IContentsManager
         }
 
         var contentDto = ConvertToContentDto(content);
+        var updatedContent = await _database.Update(id, contentDto).ConfigureAwait(false);
 
-        return await _database.Update(id, contentDto).ConfigureAwait(false);
+        _cache.Set(id, content, TimeSpan.FromMinutes(5));
+
+        return updatedContent;
     }
 
     public async Task<Content?> RemoveGenresFromContent(Guid id, IEnumerable<string> genres)
     {
         _logger.LogInformation("Removing genres from content with id {Id}.", id);
+
+        if (_cache.TryGetValue(id, out Content? cachedContent))
+        {
+            return cachedContent;
+        }
+
         var content = await _database.Read(id).ConfigureAwait(false);
 
         if (content == null)
@@ -81,10 +118,10 @@ public class ContentsManager : IContentsManager
             return null;
         }
 
-        // Remove os gêneros especificados do conteúdo
+        // Removo os gêneros especificados do conteúdo
         var updatedGenres = content.GenreList.Except(genres).ToList();
 
-        // Cria uma cópia do conteúdo com os gêneros removidos
+        // Crio uma cópia do conteúdo com os gêneros removidos
         var updatedContent = new ContentDto(
             content.Title,
             content.SubTitle,
@@ -96,7 +133,11 @@ public class ContentsManager : IContentsManager
             updatedGenres
         );
 
-        return await _database.Update(id, updatedContent).ConfigureAwait(false);
+        var updatedContentEntity = await _database.Update(id, updatedContent).ConfigureAwait(false);
+
+        _cache.Set(id, updatedContentEntity, TimeSpan.FromMinutes(5));
+
+        return updatedContentEntity;
     }
 
     private ContentDto ConvertToContentDto(Content content)
