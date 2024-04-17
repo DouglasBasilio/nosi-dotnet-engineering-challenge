@@ -11,4 +11,5 @@ public interface IContentsManager
     Task<Guid> DeleteContent(Guid id);
     Task<Content?> AddGenresToContent(Guid id, IEnumerable<string> genres);
     Task<Content?> RemoveGenresFromContent(Guid id, IEnumerable<string> genres);
+    Task<IEnumerable<Content?>> SearchContents(string title, string genre);
 }

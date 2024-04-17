@@ -39,10 +39,10 @@ namespace NOS.Engineering.Challenge.Tests.Mocks
                 entity.SubTitle,
                 entity.Description,
                 entity.ImageUrl,
-                entity.Duration ?? 0, // Se entity.Duration for nullable, forneça um valor padrão
-                entity.StartTime ?? DateTime.MinValue, // Se entity.StartTime for nullable, forneça um valor padrão
-                entity.EndTime ?? DateTime.MinValue, // Se entity.EndTime for nullable, forneça um valor padrão
-                entity.GenreList ?? new List<string>() // Se entity.Genres for nullable, forneça uma lista vazia como padrão
+                entity.Duration ?? 0,
+                entity.StartTime ?? DateTime.MinValue,
+                entity.EndTime ?? DateTime.MinValue,
+                entity.GenreList ?? new List<string>()
             );
             _mockData.Add(content.Id, content);
             
@@ -58,10 +58,10 @@ namespace NOS.Engineering.Challenge.Tests.Mocks
                 content.SubTitle = entity.SubTitle;
                 content.Description = entity.Description;
                 content.ImageUrl = entity.ImageUrl;
-                content.Duration = entity.Duration ?? 0; // Se entity.Duration for nullable, forneça um valor padrão
-                content.StartTime = entity.StartTime ?? DateTime.MinValue; // Se entity.StartTime for nullable, forneça um valor padrão
-                content.EndTime = entity.EndTime ?? DateTime.MinValue; // Se entity.EndTime for nullable, forneça um valor padrão
-                content.GenreList = entity.GenreList ?? new List<string>(); // Se entity.Genres for nullable, forneça uma lista vazia como padrão
+                content.Duration = entity.Duration ?? 0;
+                content.StartTime = entity.StartTime ?? DateTime.MinValue;
+                content.EndTime = entity.EndTime ?? DateTime.MinValue;
+                content.GenreList = entity.GenreList ?? new List<string>();
 
                 return Task.FromResult<Content?>(content);
             }
@@ -76,16 +76,6 @@ namespace NOS.Engineering.Challenge.Tests.Mocks
                 return Task.FromResult(id);
             }
             return Task.FromResult(Guid.Empty);
-        }
-
-        public IEnumerable<Content?> GetMockContents()
-        {
-            // Create mock content items
-            var content1 = new Content(Guid.NewGuid(), "Title1", "Subtitle1", "Description1", "ImageUrl1", 120, DateTime.Now, DateTime.Now.AddHours(2), new List<string> { "Genre1", "Genre2" });
-            var content2 = new Content(Guid.NewGuid(), "Title2", "Subtitle2", "Description2", "ImageUrl2", 130, DateTime.Now, DateTime.Now.AddHours(3), new List<string> { "Genre3", "Genre4" });
-            var content3 = new Content(Guid.NewGuid(), "Title3", "Subtitle3", "Description3", "ImageUrl3", 140, DateTime.Now, DateTime.Now.AddHours(4), new List<string> { "Genre5", "Genre6" });
-
-            return new List<Content?> { content1, content2, content3 };
         }
     }
 }

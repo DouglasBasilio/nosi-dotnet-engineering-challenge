@@ -10,12 +10,14 @@ public class ContentsManager : IContentsManager
     private readonly IDatabase<Content?, ContentDto> _database;
     private readonly ILogger<ContentsManager> _logger;
     private readonly IMemoryCache _cache;
+    private readonly ContentSearcher _contentSearcher;
 
     public ContentsManager(IDatabase<Content?, ContentDto> database, ILogger<ContentsManager> logger, IMemoryCache cache)
     {
         _database = database;
         _logger = logger;
         _cache = cache;
+        _contentSearcher = new ContentSearcher(database);
     }
 
     public async Task<IEnumerable<Content?>> GetManyContents()
@@ -79,7 +81,7 @@ public class ContentsManager : IContentsManager
             return null;
         }
 
-        // Adiciona apenas os gêneros que não estão presentes no conteúdo
+        // Adiciono apenas os gêneros que não estão presentes no conteúdo
         foreach (var genre in genres)
         {
             if (!content.GenreList.Contains(genre))
@@ -115,7 +117,7 @@ public class ContentsManager : IContentsManager
         return updatedContent;
     }
 
-    private ContentDto ConvertToContentDto(Content content)
+    public ContentDto ConvertToContentDto(Content content)
     {
         return new ContentDto(
             content.Title,
@@ -127,5 +129,10 @@ public class ContentsManager : IContentsManager
             content.EndTime,
             content.GenreList
         );
+    }
+
+    public async Task<IEnumerable<Content?>> SearchContents(string title, string genre)
+    {
+        return await _contentSearcher.SearchContents(title, genre);
     }
 }

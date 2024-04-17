@@ -14,7 +14,19 @@ public class ContentController : Controller
     {
         _manager = manager;
     }
-    
+
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchContents([FromQuery] string? title, [FromQuery] string? genre)
+    {
+        var filteredContents = await _manager.SearchContents(title, genre).ConfigureAwait(false);
+
+        if (!filteredContents.Any())
+            return NotFound();
+
+        return Ok(filteredContents);
+    }
+
+    [Obsolete("This endpoint is deprecated. Use GET /api/v1/Content/search instead.")]
     [HttpGet]
     public async Task<IActionResult> GetManyContents()
     {
