@@ -49,7 +49,7 @@ public class ContentsManager : IContentsManager
 
         if (content != null)
         {
-            _cache.Set(id, content, TimeSpan.FromMinutes(5));
+            _cache.Set(id, content, TimeSpan.FromMinutes(1));
         }
 
         return content;
