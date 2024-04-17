@@ -71,11 +71,6 @@ public class ContentsManager : IContentsManager
     {
         _logger.LogInformation("Adding genres to content with id {Id}.", id);
 
-        if (_cache.TryGetValue(id, out Content? cachedContent))
-        {
-            return cachedContent;
-        }
-
         var content = await _database.Read(id).ConfigureAwait(false);
 
         if (content == null)
@@ -89,14 +84,12 @@ public class ContentsManager : IContentsManager
         {
             if (!content.GenreList.Contains(genre))
             {
-                content.GenreList.Append(genre);
+                content.GenreList = content.GenreList.Append(genre).ToList();
             }
         }
 
         var contentDto = ConvertToContentDto(content);
         var updatedContent = await _database.Update(id, contentDto).ConfigureAwait(false);
-
-        _cache.Set(id, content, TimeSpan.FromMinutes(5));
 
         return updatedContent;
     }
@@ -104,11 +97,6 @@ public class ContentsManager : IContentsManager
     public async Task<Content?> RemoveGenresFromContent(Guid id, IEnumerable<string> genres)
     {
         _logger.LogInformation("Removing genres from content with id {Id}.", id);
-
-        if (_cache.TryGetValue(id, out Content? cachedContent))
-        {
-            return cachedContent;
-        }
 
         var content = await _database.Read(id).ConfigureAwait(false);
 
@@ -119,25 +107,12 @@ public class ContentsManager : IContentsManager
         }
 
         // Removo os gêneros especificados do conteúdo
-        var updatedGenres = content.GenreList.Except(genres).ToList();
+        content.GenreList = content.GenreList.Except(genres).ToList();
 
-        // Crio uma cópia do conteúdo com os gêneros removidos
-        var updatedContent = new ContentDto(
-            content.Title,
-            content.SubTitle,
-            content.Description,
-            content.ImageUrl,
-            content.Duration,
-            content.StartTime,
-            content.EndTime,
-            updatedGenres
-        );
+        var contentDto = ConvertToContentDto(content);
+        var updatedContent = await _database.Update(id, contentDto).ConfigureAwait(false);
 
-        var updatedContentEntity = await _database.Update(id, updatedContent).ConfigureAwait(false);
-
-        _cache.Set(id, updatedContentEntity, TimeSpan.FromMinutes(5));
-
-        return updatedContentEntity;
+        return updatedContent;
     }
 
     private ContentDto ConvertToContentDto(Content content)
